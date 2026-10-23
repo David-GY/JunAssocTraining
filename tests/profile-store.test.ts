@@ -4,6 +4,7 @@ import {mkdtemp,rm,writeFile,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {createFileStore,profileStore} from '../lib/profile-store.ts';
+import {createBlobStore} from '../lib/profile-store.ts';
 import {initialProfiles} from '../app/profiles.ts';
 
 test('development edits persist across store instances and reject stale saves',async()=>{
@@ -22,10 +23,10 @@ test('development edits persist across store instances and reject stale saves',a
 });
 
 test('Vercel fails closed without durable storage instead of writing temporary files',async()=>{
-  const previous=process.env.VERCEL,url=process.env.DATABASE_URL;
-  process.env.VERCEL='1';delete process.env.DATABASE_URL;
+  const previous=process.env.VERCEL,url=process.env.DATABASE_URL,blob=process.env.BLOB_READ_WRITE_TOKEN;
+  process.env.VERCEL='1';delete process.env.DATABASE_URL;delete process.env.BLOB_READ_WRITE_TOKEN;
   try{await assert.rejects(()=>profileStore(),/Database is not configured/)}
-  finally{if(previous===undefined)delete process.env.VERCEL;else process.env.VERCEL=previous;if(url===undefined)delete process.env.DATABASE_URL;else process.env.DATABASE_URL=url}
+  finally{if(previous===undefined)delete process.env.VERCEL;else process.env.VERCEL=previous;if(url===undefined)delete process.env.DATABASE_URL;else process.env.DATABASE_URL=url;if(blob===undefined)delete process.env.BLOB_READ_WRITE_TOKEN;else process.env.BLOB_READ_WRITE_TOKEN=blob}
 });
 
 test('development reads recover after a failed save and filesystem repair',async()=>{
@@ -37,4 +38,19 @@ test('development reads recover after a failed save and filesystem repair',async
     await rm(blocked);await mkdir(blocked);
     assert.equal((await store.list())[0].id,'kusina-ni-lina');
   }finally{await rm(dir,{recursive:true,force:true})}
+});
+
+test('existing Blob records are preserved and stale or racing writes are rejected',async()=>{
+  let current=[{...initialProfiles[0],name:'Existing workshop edits',version:4},initialProfiles[1]];
+  let etag='"1"';let race=false;
+  const store=createBlobStore({
+    read:async()=>({profiles:current,etag}),
+    write:async(profiles:typeof current,expected:string|null)=>{if(race||expected!==etag)return false;current=profiles;etag='"2"';return true},
+  });
+  assert.equal((await store.list())[0].name,'Existing workshop edits');
+  assert.equal(await store.save(initialProfiles[0]),null);
+  const saved=await store.save({...current[0],profileLink:'edited.example/company'});
+  assert.equal(saved?.version,5);assert.equal(current[1].name,'Verdant Packaging');
+  race=true;assert.equal(await store.save({...saved!,name:'Concurrent edit'}),null);
+  assert.equal(current[0].name,'Existing workshop edits');
 });

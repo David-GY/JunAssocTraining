@@ -3,7 +3,7 @@ export type EditorConfig={password:string;secret:string};
 export const SESSION_SECONDS=8*60*60;
 export function editorConfig():EditorConfig|null {
   const password=process.env.EDITOR_PASSWORD,secret=process.env.EDITOR_SESSION_SECRET;
-  return password&&password.length>=8&&secret&&secret.length>=32?{password,secret}:null;
+  return password&&password!=='[SENSITIVE]'&&secret&&secret.length>=32?{password,secret}:null;
 }
 function signature(value:string,config:EditorConfig){
   const key=createHmac('sha256',config.secret).update(config.password).digest();

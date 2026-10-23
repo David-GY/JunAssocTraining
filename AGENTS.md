@@ -3,7 +3,7 @@
 - Treat `David-GY/JunAssocTraining` as the working source repository. Use `codex/` branches and pull requests. Keep a visible working preview open while making changes, as requested by the user.
 - Target native Next.js on Vercel. Do not reintroduce Sites/Cloudflare dependencies or publish to the old Sites project. The original source is retained in history at `e6f79626200824f02e3c44d4f471f61d866350a9`.
 - Public viewing and a shared editing password require no saved users. Never add user accounts, identity headers, or user/session tables without an explicit requirement. All writes must verify the signed editor cookie and same-origin request.
-- Production requires durable Postgres via `DATABASE_URL`. `.local-data/` is for local development only and must never become a Vercel persistence fallback.
+- Production uses the existing private Vercel Blob store (`BLOB_READ_WRITE_TOKEN`, path `engage/profiles.json`). Preserve its records and conditional ETag writes. `DATABASE_URL` is an optional Postgres alternative, not a prerequisite for the existing deployment. `.local-data/` is local development only and must never become a Vercel persistence fallback.
 - Preserve existing production company records. Export/import current data before a storage migration; never overwrite it with fictional defaults. Do not claim a GitHub push updates Vercel without verifying the deployment connection.
 - Keep credentials, environment files, runtime state, and data backups out of commits. `.env.example` contains names and empty placeholders only.
 - Displayed profile addresses are separate from stable `?company=` share URLs. Keep older records compatible and enforce request/record image size limits.

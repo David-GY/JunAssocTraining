@@ -1,8 +1,14 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createEditorToken,isEditorToken,checkPassword,sameOrigin} from '../lib/editor-session.ts';
+import {createEditorToken,isEditorToken,checkPassword,sameOrigin,editorConfig} from '../lib/editor-session.ts';
 
 const config={password:'workshop-test-password',secret:'a'.repeat(48)};
+test('existing nonempty workshop passwords remain compatible on deployment',()=>{
+  const previousPassword=process.env.EDITOR_PASSWORD,previousSecret=process.env.EDITOR_SESSION_SECRET;
+  process.env.EDITOR_PASSWORD='legacy';process.env.EDITOR_SESSION_SECRET='s'.repeat(48);
+  try{assert.ok(editorConfig());process.env.EDITOR_PASSWORD='[SENSITIVE]';assert.equal(editorConfig(),null)}
+  finally{if(previousPassword===undefined)delete process.env.EDITOR_PASSWORD;else process.env.EDITOR_PASSWORD=previousPassword;if(previousSecret===undefined)delete process.env.EDITOR_SESSION_SECRET;else process.env.EDITOR_SESSION_SECRET=previousSecret}
+});
 test('shared-password editing needs no user identity and rejects incorrect passwords',()=>{
   assert.equal(checkPassword('workshop-test-password',config),true);
   assert.equal(checkPassword('incorrect',config),false);

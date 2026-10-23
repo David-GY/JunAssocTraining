@@ -1,0 +1,11 @@
+.git
+.env*
+.local-data
+.sites-runtime
+.wrangler
+.vinext
+.next
+node_modules
+dist
+work
+outputs
