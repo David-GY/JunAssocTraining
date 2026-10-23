@@ -1,5 +1,5 @@
 export type ProfileImages = {avatar?:string; cover?:string; posts?:string[]};
-export type Profile = {id:string; name:string; style:string; sector:string; size:string; advocacy:string; headline:string; about:string; location:string; email:string; phone:string; contact:string; services:string; posts:string; version:number; profileLink?:string; images?:ProfileImages};
+export type Profile = {id:string; name:string; style:string; sector:string; size:string; advocacy:string; headline:string; about:string; location:string; email:string; phone:string; contact:string; services:string; posts:string; version:number; profileLink?:string; images?:ProfileImages; deletedAt?:string};
 export type ProfileFormat='minimal'|'linkedin'|'social'|'website'|'poster';
 export const styles:ProfileFormat[] = ['minimal','linkedin','social','website','poster'];
 export const formatLabels:Record<ProfileFormat,string>={minimal:'Number only',linkedin:'LinkedIn',social:'Facebook',website:'Website',poster:'Poster'};
@@ -49,6 +49,7 @@ export function validProfile(p:unknown):p is Profile {
       !Number.isInteger(a.version) || (a.version as number) < 0 ||
       !['name','sector','size','advocacy','headline','about','location','email','phone','contact','services','posts'].every(k => typeof a[k] === 'string' && (a[k] as string).length <= 12000) ||
       !(a.name as string).trim()) return false;
+  if (a.deletedAt !== undefined && (typeof a.deletedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(a.deletedAt) || !Number.isFinite(Date.parse(a.deletedAt)))) return false;
   if (a.profileLink !== undefined && (typeof a.profileLink !== 'string' || a.profileLink.length > 500 ||
       /[\s\x00-\x1f\x7f]/.test(a.profileLink) || (/^[a-z][a-z0-9+.-]*:/i.test(a.profileLink) && !/^https?:\/\//i.test(a.profileLink)))) return false;
   if (a.images !== undefined) {
@@ -58,5 +59,6 @@ export function validProfile(p:unknown):p is Profile {
     if (['avatar','cover'].some(k => images[k] !== undefined && !validImageSource(images[k]))) return false;
     if (images.posts !== undefined && (!Array.isArray(images.posts) || images.posts.length > MAX_POST_IMAGES || !images.posts.every(validImageSource))) return false;
   }
-  return new TextEncoder().encode(JSON.stringify(p)).length <= MAX_PROFILE_BYTES;
+  // Lifecycle metadata grows on server writes without increasing user content.
+  return new TextEncoder().encode(JSON.stringify({...a,version:0,deletedAt:undefined})).length <= MAX_PROFILE_BYTES;
 }

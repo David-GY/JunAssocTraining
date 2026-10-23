@@ -72,3 +72,7 @@ npm run build
 ```
 
 The tests cover legacy data, media validation and limits, text-picture association, password sessions, origin checks, request limits, local persistence, and stale updates. The existing private Blob store has also been checked with an isolated read/write/concurrency test object; live company records were left intact. The optional remote Postgres integration remains unverified.
+
+### Delete and recover pages
+
+With editing unlocked, open a saved page in the editor and choose **Delete page**, then **Move to Trash**. This discards unsaved changes and hides the saved page from public tabs. Open **Trash** in the top bar and choose **Restore** to recover its saved text, pictures, profile address, and original share URL. Pages stay in Trash without automatic expiry; there is no permanent-delete button. Trash access and recovery require the editing password.
