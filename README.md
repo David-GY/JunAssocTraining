@@ -1,184 +1,72 @@
-# ENGAGE Company Profiles
+# ENGAGE Company Browser
 
-The working source repository for the ENGAGE workshop company browser is
-[David-GY/JunAssocTraining](https://github.com/David-GY/JunAssocTraining).
-Use this repository and its branches for future development and reviews.
-You can edit the source in the browser with
-[github.dev](https://github.dev/David-GY/JunAssocTraining).
-For a cloud terminal, open the repository in GitHub Codespaces using **Code → Codespaces**;
-Codespaces availability and billing depend on your GitHub account.
+A Next.js application built for Vercel, with public company profiles and shared-password editing. No user sign-up, user accounts, email collection, or user database is required. An expiring signed cookie remembers editing access in the browser; the server stores company records and pictures only.
 
-## Recovery and hosting
+Working source: [David-GY/JunAssocTraining](https://github.com/David-GY/JunAssocTraining). Edit in [github.dev](https://github.dev/David-GY/JunAssocTraining), clone locally, or use GitHub Codespaces. Changes belong in `codex/` branches and pull requests.
 
-Recovered on October 23, 2026 from the original ENGAGE Sites source, retaining
-its original Git commit `e6f79626200824f02e3c44d4f471f61d866350a9`.
+## Local development
 
-- Original hosted Site: https://engage-company-profiles.davyu.chatgpt.site
-- Existing Vercel deployment: https://engage-company-browser.vercel.app
-- Recovered frontend: `app/browser.tsx`, styles: `app/globals.css`.
-- Starter records and validation: `app/profiles.ts`.
-- Recovered backend: `app/api/profiles/route.ts`, Cloudflare D1 via the `DB` binding.
-- Database schema and migration: `db/schema.ts`, `drizzle/0000_groovy_quicksilver.sql`.
-- Original Sites binding configuration: `.openai/hosting.json`.
-
-GitHub stores the application source and history. Production profile records remain
-in the running deployment's database; this recovery does not migrate that database.
-Do not replace current workshop edits with the fictional starter records.
-
-The recovered source requires Sites/Cloudflare hosting for its existing backend
-and trusted ChatGPT sign-in headers. It is not the exact source of the Vercel
-deployment: Vercel exposes `/api/editor`, which this recovered version does not
-contain. Its frontend calls same-origin `/api/profiles` and `/api/editor` routes;
-whether those server routes share storage with Sites has not been verified.
-Pushing this repository does not by itself reconnect or redeploy Vercel.
-
-Before a Vercel production update, recover or reconcile that deployment's server
-implementation, authentication, and storage configuration. Do not trust the
-Sites authentication headers directly on an unprotected Vercel endpoint.
-
-## Working from GitHub
+Use Node.js 22.18+ or 24+.
 
 ```sh
-git clone https://github.com/David-GY/JunAssocTraining.git
-cd JunAssocTraining
-git switch -c codex/your-change
-npm run install:ci
+npm ci
+```
+
+Copy `.env.example` to `.env.local`. Set `EDITOR_PASSWORD` (at least 8 characters) and `EDITOR_SESSION_SECRET` (at least 32 random characters). Generate a secret with:
+
+```sh
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Then run:
+
+```sh
 npm run dev
 ```
 
-Use Node.js 22.13 or newer. The development server defaults to port 5173.
-Keep production credentials in hosting environment settings or ignored `.env*`
-files. Use pull requests for subsequent changes and validate against the target
-runtime before deploying. The original starter's runtime instructions follow below.
+Open http://127.0.0.1:5173. Leave `DATABASE_URL` blank for local-only development data in ignored `.local-data/profiles.json`. This fallback is disabled in production and on Vercel. A local preview does not edit the deployed workshop's data.
 
-The pending product changes are an editable displayed profile link and picture
-uploads for all image fields. They have not been implemented by this source recovery.
+## Vercel setup
 
----
+1. Import this GitHub repository into the existing Vercel project. Choose the Next.js framework and the repository root. `vercel.json` uses `npm run build`; there is no Cloudflare or Sites runtime dependency.
+2. Connect a Neon Postgres database through Vercel Storage/Marketplace, or supply its connection string as `DATABASE_URL`.
+3. Set `EDITOR_PASSWORD` and `EDITOR_SESSION_SECRET` in Vercel's server environment settings. Use separate secrets and a separate database for preview deployments. None of these variables use the `NEXT_PUBLIC_` prefix.
+4. With the production database URL in a secure local environment, run `npm run db:setup` once. This creates only `engage_profiles`, with `id`, `data`, and `version`. It creates no user or session tables.
+5. Import the existing company data before pointing production at the new database, then deploy. A GitHub push alone does not prove the existing Vercel project is connected.
 
-## Original Vinext starter instructions
+Database setup is intentionally separate from the build. If production storage or editing secrets are missing, the relevant API returns an unavailable response; it never silently saves into Vercel's temporary filesystem.
 
-A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
+The Neon adapter uses its [HTTP serverless driver](https://neon.com/docs/serverless/serverless-driver). Profile requests are capped at 1,600,000 UTF-8 bytes; profile lists stream their JSON response, following [Vercel's streaming support](https://vercel.com/docs/functions/streaming-functions).
 
-## Prerequisites
+## Preserve the current workshop's edits
 
-- Node.js `>=22.13.0`
-- Portable: Windows, macOS, or Linux; no Bash required
-- Managed Linux: managed Linux runtime with Bash, `flock`, `curl`, `sha256sum`, and GNU `timeout`
-- Git is required only for publishing
+This repository was recovered from the original Sites source on October 23, 2026, at commit `e6f79626200824f02e3c44d4f471f61d866350a9`. The old Cloudflare/Sites implementation remains available in Git history. It has been replaced here with native Next.js routes, shared-password editing, and Postgres storage.
 
-## Sites Lifecycle
+- Existing Vercel app: https://engage-company-browser.vercel.app
+- Original Sites app: https://engage-company-profiles.davyu.chatgpt.site
 
-The Sites initializer copies the shared starter and selects managed-linux only when `SITES_MANAGED_LINUX_CONTAINER=1`; otherwise it selects portable. It saves the selection only in ignored `.sites-runtime/execution-profile.json`. Both profiles copy/configure first, then use the plugin's separate `install-dependencies.mjs` step to measure installation independently. Edit source under `app/` and follow the Sites skill for installation, preview, builds, and publishing.
-
-Run `node <plugin-root>/scripts/configure-execution-profile.mjs` only when the profile is unknown for the current checkout and environment. Profile changes do not alter tracked source or require reinstalling otherwise-valid dependencies; restart an existing preview to use the new selection. Do not commit or upload `.sites-runtime/`.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` runs `npm ci` once against the shared lockfile, disables parent-workspace discovery, and includes required dev/optional dependencies despite production/omit settings. Sharp defaults to prebuilt binaries unless explicitly configured otherwise. Do not overlap installers.
-
-- **Portable:** Preserve host HOME, npm cache, registry, proxy, temporary paths, retry/concurrency settings, and lifecycle-script policy. Use `--prefer-offline --no-audit --no-fund`.
-- **Managed Linux:** Use the existing project-local HOME/cache/tmp setup and Linux install lock, tarball preflight, and timeout. Restore the image-seeded npm cache only when its lockfile hash matches; retain network fallback. Builds keep their existing timeout. These helpers are not invoked by the portable profile.
-
-`scripts/sites-env.mjs` preserves the caller's HOME, npm cache, proxy, XDG, and temporary-directory configuration while defaulting Wrangler and Miniflare state to the checkout. If npm reports an unwritable cache, select a writable path with `npm_config_cache` for that install. The `dev` and `start` scripts also keep Wrangler logs inside the checkout. Generated `.sites-runtime/` and `.wrangler/` directories are disposable and ignored by Git.
-
-On portable, `npm run dev` uses `vinext dev` with HMR, starting at port 5173. Vinext records the running server in ignored `.vinext/` state, rejects an ordinary duplicate launch, and recovers stale state after a stopped process; exactly simultaneous starts can race. Pass `--port <port>` or `--hostname <host>` after `npm run dev --` when needed; keep portable previews on loopback.
-
-For browser QA on managed Linux, use `sites-preview start`. The project's dev script runs Vite and accepts the supervisor's `--host 0.0.0.0 --port 4173 --strictPort` arguments. The internal browser uses `http://terminal.local:4173/`; it is not a user-facing URL. The supervisor owns the preview lifecycle. The ignored local profile survives the supervisor's cleared process environment.
-
-The portable profile simulates ChatGPT sign-in only for loopback development requests. Visit `/signin-with-chatgpt?return_to=/` to sign in as `local_seedy` (`seedy@sites.test`, display name `Seedy`) and `/signout-with-chatgpt?return_to=/` to sign out. The development cookie preserves that identity across server restarts. Mock auth is disabled in the managed-linux profile and is not included in production builds; hosted authentication remains dispatch-owned.
-
-The Worker uses `vinext/server/fetch-handler`, including Vinext's config-aware image handling. After building, `npm start` runs that Worker locally through Wrangler on `127.0.0.1`, sharing `.wrangler/state` with dev preview and local D1 migrations; it does not deploy the site or simulate sign-in. Use the URL printed by the server. Pass `npm start -- --port <port>` to select a different built-preview port.
-
-Local previews use Miniflare's placeholder `Request.cf` metadata without a network lookup. Set `CLOUDFLARE_CF_FETCH_ENABLED=true` to opt into fetching preview metadata; this setting does not change hosted request metadata.
-
-Local tool usage metrics are disabled by default. Set `WRANGLER_SEND_METRICS=true` to opt in.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `@cloudflare/workers-types` provides Worker types; `cloudflare-env.d.ts` declares optional `DB`/`BUCKET` bindings—update these declarations if binding names change
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Use it as the durable user key; use email and name for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive `oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty `name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by `oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
-```
-
-## Optional Dispatch-Owned ChatGPT Sign-In
-
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use the returned `userId` as the stable user key for user-owned records; do not use email as a durable identifier.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the OAuth cookies, and identity header injection. Do not implement app routes for those reserved paths. Routes that do not import and call the helper remain anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the Sites hosting platform's access policy controls for workspace-wide restrictions, or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Local D1 migrations
-
-For a D1-backed local preview, generate SQL with `npm run db:generate`. Build once through the Sites skill's build entrypoint (or `npm run build` for standalone use) to generate `dist/server/wrangler.json`, rebuilding if bindings change. From the project root, apply each pending migration in order:
+Source recovery did not recover the live Vercel database or its configuration. Before changing production storage, use **Export profiles** on the existing app. Keep that backup outside Git, for example under `.local-data/`. Import it into the target Postgres database with:
 
 ```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_example.sql
+npm run db:setup -- .local-data/engage-company-profiles.json
 ```
 
-Replace the filename with the pending migration and `DB` with your D1 binding name if different. Use `.wrangler/state`, not `.wrangler/state/v3`; Wrangler adds the versioned directories. Do not replay migrations already applied locally. This updates only the preview database; publishing applies production migrations separately.
+The importer inserts missing records only, preserves existing target records, and promotes imported version-zero records to version one. It never replaces saved workshop edits with the fictional starter profiles.
 
-## Diagnostic Commands
+## Editing and pictures
 
-- `npm run install:ci`: perform the one locked dependency install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: preview the built Worker locally with D1/R2 support
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+Anyone can view company profiles. **Unlock editing** asks for the shared workshop password. Access lasts up to eight hours, using an HttpOnly, SameSite cookie that is Secure in production. **Lock editing** clears that browser's cookie. Rotating the shared password or signing secret invalidates existing tokens. Every save checks the cookie, request origin, and optimistic record version. The app does not accept Sites identity headers as authorization.
 
-When using the Sites plugin, follow its skill instructions for installation, builds, and publishing. These npm commands remain available for standalone use.
+Tabs size to their words and scroll horizontally if necessary. The top Help button is removed. Editing supports a displayed profile address, profile picture, cover/hero picture, and pictures attached to individual posts. The displayed address is separate from the stable `?company=` share URL.
 
-The portable build runs Vinext directly without a host `timeout` command. The managed-linux build uses `scripts/build-verified.sh` and its existing `SITES_BUILD_TIMEOUT` setting.
+Uploads accept JPEG, PNG, and WebP files up to 10 MB. The browser resizes pictures to at most 1200 pixels (640 for avatars) and 200,000 encoded characters each. Pictures are saved inside the company record. The combined profile budget is 1,600,000 UTF-8 bytes. Up to 30 posts can have pictures. Removing a post removes its picture; cancelling an edit retains the saved version. Older profiles work without image fields.
 
-## Learn More
+## Checks
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+```sh
+npm test
+npx tsc --noEmit
+npm run build
+```
+
+The tests cover legacy data, media validation and limits, text-picture association, password sessions, origin checks, request limits, local persistence, and stale updates. Local filesystem tests do not verify a remote Postgres database; run the setup and verify a save on the configured Vercel preview before production rollout.
