@@ -1,15 +1,33 @@
-import {env} from 'cloudflare:workers';
-import {getChatGPTUser} from '../../chatgpt-auth';
-import {initialProfiles,validProfile} from '../../profiles';
+import {validProfile,MAX_PROFILE_BYTES} from '../../profiles.ts';
+import {hasEditorAccess,sameOrigin} from '../../../lib/editor-session.ts';
+import {profileStore} from '../../../lib/profile-store.ts';
+import {readLimitedJson,RequestBodyError} from '../../../lib/request-json.ts';
 export const dynamic='force-dynamic';
+export const runtime='nodejs';
+const headers={'Cache-Control':'no-store'};
 export async function GET(){
-try{const rows=await env.DB!.prepare('SELECT id,data,version FROM profiles').all<{id:string,data:string,version:number}>();const records=rows.results.map(r=>({...JSON.parse(r.data),version:r.version}));const ids=new Set(initialProfiles.map(p=>p.id));return Response.json([...initialProfiles.map(p=>records.find(r=>r.id===p.id)||p),...records.filter(r=>!ids.has(r.id))],{headers:{'Cache-Control':'no-store'}});}catch{return Response.json({error:'Profiles could not load. Please refresh or try again.'},{status:503});}
+  try{
+    const profiles=await (await profileStore()).list();
+    // Stream picture-rich lists instead of buffering one large Vercel response.
+    const encoder=new TextEncoder();let index=0,started=false;
+    const body=new ReadableStream({pull(controller){
+      if(!started){controller.enqueue(encoder.encode('['));started=true;return}
+      if(index<profiles.length){controller.enqueue(encoder.encode((index?',':'')+JSON.stringify(profiles[index++])))}
+      else{controller.enqueue(encoder.encode(']'));controller.close()}
+    }});
+    return new Response(body,{headers:{...headers,'Content-Type':'application/json'}});
+  }catch{return Response.json({error:'Profiles could not load. Please refresh or try again.'},{status:503,headers})}
 }
 export async function PUT(request:Request){
-if(!await getChatGPTUser())return Response.json({error:'Sign in to edit workshop profiles.'},{status:401});
-if(request.headers.get('origin')!==new URL(request.url).origin)return Response.json({error:'Invalid request origin.'},{status:403});
-let p;try{if(Number(request.headers.get('content-length'))>180000)return Response.json({error:'Profile is too large.'},{status:413});p=await request.json();}catch{return Response.json({error:'Invalid profile.'},{status:400});}
-if(!validProfile(p))return Response.json({error:'Check the profile fields. A company name is required.'},{status:400});
-try{const data=JSON.stringify(p);let result;if(p.version===0){result=await env.DB!.prepare('INSERT INTO profiles(id,data,version) VALUES(?,?,1) ON CONFLICT(id) DO NOTHING').bind(p.id,data).run();}else{result=await env.DB!.prepare('UPDATE profiles SET data=?,version=version+1 WHERE id=? AND version=?').bind(data,p.id,p.version).run();}if(!result.meta.changes)return Response.json({error:'Someone else updated this profile. Copy your draft, close the editor, and reload the page before trying again.'},{status:409});return Response.json({...p,version:p.version+1});}catch{return Response.json({error:'Changes could not be saved. Your draft is still here; please try again.'},{status:503});}
+  if(!hasEditorAccess(request))return Response.json({error:'Unlock editing to save this profile.'},{status:401,headers});
+  if(!sameOrigin(request))return Response.json({error:'Invalid request origin.'},{status:403,headers});
+  let profile;
+  try{profile=await readLimitedJson(request,MAX_PROFILE_BYTES)}
+  catch(error){return Response.json({error:error instanceof RequestBodyError&&error.status===413?'Profile is too large. Remove a few pictures and try again.':'Invalid profile.'},{status:error instanceof RequestBodyError?error.status:400,headers})}
+  if(!validProfile(profile))return Response.json({error:'Check the profile fields, profile address, and pictures. A company name is required.'},{status:400,headers});
+  try{
+    const saved=await (await profileStore()).save(profile);
+    if(!saved)return Response.json({error:'Someone else updated this profile. Copy your draft, close the editor, and reload before trying again.'},{status:409,headers});
+    return Response.json(saved,{headers});
+  }catch{return Response.json({error:'Changes could not be saved. Your draft is still here; please try again.'},{status:503,headers})}
 }
-
