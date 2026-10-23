@@ -19,6 +19,8 @@ function Avatar({p}:{p:Profile}){return p.images?.avatar?<img src={p.images.avat
 export default function Browser(){
   const [profiles,setProfiles]=useState<Profile[]>(initialProfiles);
   const [active,setActive]=useState(initialProfiles[0].id);
+  const [trash,setTrash]=useState<Profile[]>([]),[showTrash,setShowTrash]=useState(false),[trashLoading,setTrashLoading]=useState(false);
+  const [confirmDelete,setConfirmDelete]=useState(false);
   const [draft,setDraft]=useState<Profile|null>(null);
   const [draftPosts,setDraftPosts]=useState<{key:string;text:string;image:string}[]>([]);
   const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
@@ -47,8 +49,10 @@ export default function Browser(){
   useEffect(()=>{if(unlockDialog)passwordRef.current?.focus()},[unlockDialog]);
 
   function select(id:string){setActive(id);history.pushState({},'','?company='+encodeURIComponent(id));setNotice('');window.scrollTo(0,0)}
-  function close(){if(busy)return;setDraft(null);setError('');triggerRef.current?.focus()}
+  function close(){if(busy)return;setConfirmDelete(false);setDraft(null);setError('');triggerRef.current?.focus()}
   function beginDraft(duplicate=false){
+    setConfirmDelete(false);
+    if(!selected){setDraft({...initialProfiles[0],id:'company-'+crypto.randomUUID().slice(0,8),name:'New company',version:0});setDraftPosts([]);return}
     setDraftPosts(selected.posts.split('\n').filter(Boolean).map((text,i)=>({key:crypto.randomUUID(),text,image:selected.images?.posts?.[i]||''})));
     setDraft(duplicate?{...selected,id:'company-'+crypto.randomUUID().slice(0,8),name:selected.name+' (copy)',version:0}:{...selected});
   }
@@ -73,10 +77,11 @@ export default function Browser(){
     try{
       const response=await fetch('/api/editor',{method:'DELETE'});
       if(!response.ok)throw Error('Could not lock editing. Try again.');
-      setUnlocked(false);setNotice('Editing is locked.');
+      setUnlocked(false);setShowTrash(false);setTrash([]);setNotice('Editing is locked.');
     }catch(e){setError((e as Error).message)}finally{setUnlocking(false)}
   }
   async function share(){
+    if(!selected)return;
     const link=location.origin+'/?company='+encodeURIComponent(selected.id);
     try{await navigator.clipboard.writeText(link);setNotice('Profile link copied. Anyone with the link can view.')}
     catch{setNotice('Copy this address: '+link)}
@@ -95,6 +100,34 @@ export default function Browser(){
       setProfiles(prev=>prev.some(p=>p.id===data.id)?prev.map(p=>p.id===data.id?data:p):[...prev,data]);
       select(data.id);setDraft(null);triggerRef.current?.focus();
       setNotice('Saved. Everyone can see the update when they refresh.');
+    }catch(e){setError((e as Error).message)}finally{setSaving(false)}
+  }
+  async function loadTrash(){
+    setShowTrash(true);setTrashLoading(true);setError('');
+    try{
+      const response=await fetch('/api/profiles?trash=1');const data=await response.json();
+      if(response.status===401){setUnlocked(false);setShowTrash(false)}
+      if(!response.ok)throw Error(data.error||'Could not load Trash.');
+      setTrash(data);
+    }catch(e){setError((e as Error).message)}finally{setTrashLoading(false)}
+  }
+  async function pageAction(page:Profile,action:'delete'|'restore'){
+    if(busy)return;setSaving(true);setError('');
+    try{
+      const response=await fetch('/api/profiles',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:page.id,version:page.version,action})});
+      const data=await response.json() as Profile & {error?:string};
+      if(response.status===401){setUnlocked(false);setShowTrash(false);setDraft(null)}
+      if(!response.ok)throw Error(data.error||'Could not update page.');
+      if(action==='delete'){
+        setProfiles(prev=>prev.filter(p=>p.id!==page.id));
+        const remaining=profiles.find(p=>p.id!==page.id);
+        if(remaining)select(remaining.id);else history.replaceState({},'','/');
+        setDraft(null);setConfirmDelete(false);
+        setNotice('Page moved to Trash. Open Trash to restore it at any time.');
+      }else{
+        setProfiles(prev=>[...prev.filter(p=>p.id!==page.id),data]);setTrash(prev=>prev.filter(p=>p.id!==page.id));
+        select(data.id);setNotice('Page restored with all saved content and pictures.');
+      }
     }catch(e){setError((e as Error).message)}finally{setSaving(false)}
   }
   function exportData(){
@@ -118,30 +151,32 @@ export default function Browser(){
       <a href="/" className="engage-logo">engage<span> / company browser</span></a>
       <div className="workshop-actions">
         <span className="training-tag">Fictional training companies</span>
+        {unlocked&&<button disabled={busy||trashLoading} onClick={loadTrash}>Trash</button>}
         {unlocked&&<button disabled={unlocking} onClick={lock}>Lock editing</button>}
-        <button className="primary" disabled={loading||unlocking} onClick={()=>openEditor()}>{unlocking?'Please wait…':unlocked?'Edit profile':'Unlock editing'}</button>
+        <button className="primary" disabled={loading||unlocking} onClick={()=>openEditor()}>{unlocking?'Please wait…':unlocked?(selected?'Edit profile':'Create page'):'Unlock editing'}</button>
       </div>
     </header>
     <div className="browser-frame">
       <div className="tab-strip" role="tablist" aria-label="Company profiles">
-        {profiles.map(p=><button key={p.id} role="tab" aria-selected={selected.id===p.id} aria-controls="company-panel" tabIndex={selected.id===p.id?0:-1}
+        {profiles.map(p=><button key={p.id} role="tab" aria-selected={selected?.id===p.id} aria-controls="company-panel" tabIndex={selected?.id===p.id?0:-1}
           onKeyDown={e=>{
             if(['ArrowRight','ArrowLeft','Home','End'].includes(e.key)){
               e.preventDefault();const index=profiles.indexOf(p);
               const next=e.key==='Home'?profiles[0]:e.key==='End'?profiles[profiles.length-1]:profiles[(index+(e.key==='ArrowRight'?1:profiles.length-1))%profiles.length];
               select(next.id);(e.currentTarget.parentElement?.children[profiles.indexOf(next)] as HTMLElement)?.focus();
             }
-          }} onClick={()=>select(p.id)} className={'browser-tab '+(selected.id===p.id?'active':'')}>
+          }} onClick={()=>select(p.id)} className={'browser-tab '+(selected?.id===p.id?'active':'')}>
           <span className={'tab-icon icon-'+profileFormat(p.style)}>{p.images?.avatar?<img src={p.images.avatar} alt=""/>:p.name.charAt(0)}</span><span>{p.name}</span>
         </button>)}
-        <button className="add-tab" onClick={()=>openEditor(true)} disabled={loading||unlocking} aria-label="Duplicate selected company as a new tab">+</button>
+        <button className="add-tab" onClick={()=>openEditor(true)} disabled={loading||unlocking} aria-label={selected?"Duplicate selected company as a new tab":"Create a new page"}>+</button>
       </div>
-      <div className="address-row"><span className="lock" aria-hidden="true">◈</span><div className="address">{displayProfileLink(selected)}</div><button onClick={share}>Copy profile link</button></div>
-      <div role="tabpanel" id="company-panel" aria-label={selected.name}><Company p={selected}/></div>
+      {selected?<><div className="address-row"><span className="lock" aria-hidden="true">◈</span><div className="address">{displayProfileLink(selected)}</div><button onClick={share}>Copy profile link</button></div>
+      <div role="tabpanel" id="company-panel" aria-label={selected.name}><Company p={selected}/></div></>:<section className="empty-pages"><h1>No pages yet</h1><p>Unlock editing to create a page or restore one from Trash.</p></section>}
     </div>
     <footer className="workshop-footer"><span>ENGAGE workshop · All companies and contact details are fictional.</span><button onClick={exportData}>Export profiles</button></footer>
     {(notice||error&&!draft&&!unlockDialog)&&<div className={'toast '+(error?'error':'')} role="status">{error||notice}<button onClick={()=>{setNotice('');setError('')}} aria-label="Dismiss message">×</button></div>}
     {loading&&<div className="load-status" role="status">Loading shared profiles…</div>}
+    {showTrash&&unlocked&&<div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="trash-title" className="editor-modal unlock-modal" onKeyDown={e=>{if(e.key==='Escape'&&!busy)setShowTrash(false);if(e.key==='Tab')modalKeys(e)}}><header><div><h2 id="trash-title">Trash</h2><p>Deleted pages stay here until restored. Nothing expires.</p></div><button autoFocus disabled={busy} onClick={()=>setShowTrash(false)} aria-label="Close Trash">Close</button></header><div className="editor-fields">{trashLoading?<p role="status">Loading Trash...</p>:trash.length?trash.map(p=><div className="trash-item" key={p.id}><div><b>{p.name}</b><p>Deleted {new Date(p.deletedAt!).toLocaleDateString()}</p></div><button disabled={busy} onClick={()=>pageAction(p,'restore')}>Restore {p.name}</button></div>):<p>Trash is empty.</p>}{error&&<p className="form-error" role="alert">{error}</p>}</div></section></div>}
     {draft&&!unlockDialog&&<div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="editor-modal" onKeyDown={modalKeys}>
       <header><div><h2 id="dialog-title">Edit company profile</h2><p>Save once. Everyone sees the update.</p></div><button ref={closeRef} disabled={busy} onClick={close} aria-label="Close dialog">×</button></header>
       <form onSubmit={e=>{e.preventDefault();save()}}>
@@ -170,7 +205,7 @@ export default function Browser(){
           <p className="field-note">Removing a cover or the first social post picture restores the illustration. Other fields remain saved when you switch personalities.</p>
         </fieldset>
         {error&&<p className="form-error" role="alert">{error}</p>}
-        <footer><button type="button" disabled={busy} onClick={close}>Cancel</button><button className="primary" disabled={busy} type="submit">{saving?'Saving…':uploads?'Preparing pictures…':'Save changes'}</button></footer>
+        <footer className="editor-footer">{profiles.some(p=>p.id===draft.id)&&<div className="delete-controls">{confirmDelete?<><p>Move {draft.name} to Trash? Unsaved changes will be discarded. You can restore the saved page at any time.</p><button type="button" disabled={busy} onClick={()=>setConfirmDelete(false)}>Keep page</button><button type="button" className="danger" disabled={busy} onClick={()=>pageAction(profiles.find(p=>p.id===draft.id)!,'delete')}>Move to Trash</button></>:<button type="button" className="danger" disabled={busy} onClick={()=>setConfirmDelete(true)}>Delete page</button>}</div>}<button type="button" disabled={busy} onClick={close}>Cancel</button><button className="primary" disabled={busy} type="submit">{saving?'Saving…':uploads?'Preparing pictures…':'Save changes'}</button></footer>
       </form>
     </section></div>}
     {unlockDialog&&<div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="unlock-title" className="editor-modal unlock-modal" onKeyDown={modalKeys}>
