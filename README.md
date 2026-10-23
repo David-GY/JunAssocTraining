@@ -59,6 +59,8 @@ Anyone can view company profiles. **Unlock editing** asks for the shared worksho
 
 Tabs size to their words and scroll horizontally if necessary. The top Help button is removed. Editing supports a displayed profile address, profile picture, cover/hero picture, and pictures attached to individual posts. The displayed address is separate from the stable `?company=` share URL.
 
+The five format choices are **Number only**, **LinkedIn**, **Facebook**, **Website**, and **Poster**. LinkedIn uses a company-page layout with a cover, square logo, overview, company details, contact card, and updates feed. Poster uses a paper-style sheet with a large headline, image, services, updates, and contact footer. All formats retain the same company data and uploaded pictures. Older corporate, artisan, and community styles open as Website; the old bold style opens as Poster. Existing stored records remain valid and are converted to a current format when saved.
+
 Uploads accept JPEG, PNG, and WebP files up to 10 MB. The browser resizes pictures to at most 1200 pixels (640 for avatars) and 200,000 encoded characters each. Pictures are saved inside the company record. The combined profile budget is 1,600,000 UTF-8 bytes. Up to 30 posts can have pictures. Removing a post removes its picture; cancelling an edit retains the saved version. Older profiles work without image fields.
 
 ## Checks

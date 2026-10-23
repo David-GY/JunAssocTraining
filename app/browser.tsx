@@ -1,15 +1,18 @@
 'use client';
 import {useState,useEffect,useRef} from 'react';
-import {initialProfiles,styles,displayProfileLink,MAX_POST_IMAGES,validProfile,serializePosts,type Profile} from './profiles';
+import {initialProfiles,styles,formatLabels,profileFormat,displayProfileLink,MAX_POST_IMAGES,validProfile,serializePosts,type Profile} from './profiles';
 import ImageUpload from './image-upload';
-const labels:Record<string,string>={social:'Social page',corporate:'Corporate',minimal:'Phone only',craft:'Artisan studio',community:'Community',bold:'Lifestyle brand'};
+import {LinkedInProfile,PosterProfile} from './social-formats';
 function Lines({text}:{text:string}){return <>{text.split('\n').filter(Boolean).map((line,i)=>{const [title,...rest]=line.split('|');return <div className="entry" key={i}>{rest.length?<><h3>{title.trim()}</h3><p>{rest.join('|').trim()}</p></>:<p>{line}</p>}</div>})}</>}
 function Contact({p}:{p:Profile}){return <section className="contact-block" id="contact"><h2>Let’s talk.</h2><p className="preserve">{p.contact}</p>{p.email&&<p className="email">{p.email}</p>}{p.phone&&<p>{p.phone}</p>}{p.location&&<p>{p.location}</p>}</section>}
 function Artwork({kind,src,alt='Company picture'}:{kind:string;src?:string;alt?:string}){if(src)return <div className={'art uploaded-art art-'+kind}><img src={src} alt={alt}/></div>;return <div className={'art art-'+kind} aria-hidden="true"><span/><span/><span/><span/><span/><span/></div>}
-function Company({p}:{p:Profile}){
+function Company({p:stored}:{p:Profile}){
+const p:Profile={...stored,style:profileFormat(stored.style)};
+if(p.style==='linkedin')return <LinkedInProfile p={p}/>;
+if(p.style==='poster')return <PosterProfile p={p}/>;
 if(p.style==='minimal')return <div className="company minimal"><div className="minimal-inner">{p.images?.avatar&&<img className="minimal-avatar" src={p.images.avatar} alt={p.name+' profile picture'}/ >}{p.images?.cover&&<Artwork kind="minimal" src={p.images.cover} alt={p.name+' cover'}/>}<h1>{p.headline||p.name}</h1>{p.phone&&<div className="phone">{p.phone}</div>}{p.contact&&<p>{p.contact}</p>}{p.about&&<p>{p.about}</p>}{p.email&&<p>{p.email}</p>}{p.location&&<p>{p.location}</p>}</div></div>;
 if(p.style==='social')return <div className="company social"><div className="social-bar"><b className="fb">f</b><span>Search this page</span><b>Community feed</b></div><div className="social-wrap"><div className="social-cover"><Artwork kind="food" src={p.images?.cover} alt={p.name+' cover'}/><h2>{p.headline}</h2></div><div className="social-title"><div className="avatar"><Avatar p={p}/></div><div><h1>{p.name}</h1><p>{p.sector} · {p.location}</p></div><a className="message-button" href="#contact">Message</a></div><div className="social-nav">Posts <span>About</span> <span>Photos</span></div><div className="social-columns"><aside className="social-card"><h2>Intro</h2><p>{p.about}</p><p>⌖ {p.location}</p><p>♡ {p.advocacy}</p><Lines text={p.services}/><div id="contact"><p className="preserve">{p.contact}</p>{p.email&&<p>{p.email}</p>}{p.phone&&<p>{p.phone}</p>}</div></aside><div><h2 className="feed-title">Posts</h2>{p.posts.split('\n').filter(Boolean).map((s,i)=><article className="social-card post" key={i}><div className="post-author"><span className="small-avatar"><Avatar p={p}/></span><div><b>{p.name}</b><small>{s.includes('|')?s.split('|')[0]:'Page update'}</small></div></div><p>{s.includes('|')?s.split('|').slice(1).join('|'):s}</p>{(i===0||p.images?.posts?.[i])&&<Artwork kind="food" src={p.images?.posts?.[i]} alt={p.name+' post picture '+(i+1)}/>}<div className="post-actions">♡ Like <span>Comment</span> <span>Share</span></div></article>)}</div></div></div></div>;
-return <div className={'company '+p.style}><nav className="brand-nav"><b className="wordmark">{p.images?.avatar&&<img className="brand-avatar" src={p.images.avatar} alt={p.name+' profile picture'}/ >}{p.name}</b><div><a href="#about">About</a><a href="#services">{p.style==='community'?'Programs':'What we do'}</a><a href="#contact">Contact</a></div></nav><section className="brand-hero"><div className="hero-copy"><p className="sector">{p.sector}</p><h1>{p.headline}</h1><p>{p.style==='craft'?'Objects with a story. Work with a purpose.':p.style==='community'?'For curious minds and stronger neighborhoods.':p.style==='bold'?'Experiences that bring people together.':'Packaging built around the way you work.'}</p><a className="brand-button" href="#about">{p.style==='craft'?'Meet the collective':p.style==='community'?'Get to know us':'Discover '+p.name}</a></div><Artwork kind={p.style} src={p.images?.cover} alt={p.name+' cover'}/></section><section className="about-section" id="about"><h2>{p.style==='craft'?'Good things take people.':p.style==='community'?'Every learner belongs.':'Who we are'}</h2><div><p>{p.about}</p><div className="facts"><span>{p.size}</span><span>{p.location}</span><span>{p.advocacy}</span></div></div></section>{p.services&&<section id="services" className="services-section"><h2>{p.style==='craft'?'From the studio':p.style==='community'?'Ways to learn':'What we do'}</h2><div className="service-grid"><Lines text={p.services}/></div></section>}{p.posts&&<section className="updates-section">{p.posts.split('\n').filter(Boolean).map((post,i)=><div key={i}><Lines text={post}/>{p.images?.posts?.[i]&&<Artwork kind={p.style} src={p.images.posts[i]} alt={p.name+' update picture '+(i+1)}/>}</div>)}</section>}<Contact p={p}/><footer className="brand-footer">{p.name}<span>{p.advocacy}</span></footer></div>
+return <div className={'company corporate '+p.style}><nav className="brand-nav"><b className="wordmark">{p.images?.avatar&&<img className="brand-avatar" src={p.images.avatar} alt={p.name+' profile picture'}/ >}{p.name}</b><div><a href="#about">About</a><a href="#services">What we do</a><a href="#contact">Contact</a></div></nav><section className="brand-hero"><div className="hero-copy"><p className="sector">{p.sector}</p><h1>{p.headline}</h1><p>{p.advocacy}</p><a className="brand-button" href="#about">{'Discover '+p.name}</a></div><Artwork kind="corporate" src={p.images?.cover} alt={p.name+' cover'}/></section><section className="about-section" id="about"><h2>Who we are</h2><div><p>{p.about}</p><div className="facts"><span>{p.size}</span><span>{p.location}</span><span>{p.advocacy}</span></div></div></section>{p.services&&<section id="services" className="services-section"><h2>What we do</h2><div className="service-grid"><Lines text={p.services}/></div></section>}{p.posts&&<section className="updates-section">{p.posts.split('\n').filter(Boolean).map((post,i)=><div key={i}><Lines text={post}/>{p.images?.posts?.[i]&&<Artwork kind="corporate" src={p.images.posts[i]} alt={p.name+' update picture '+(i+1)}/>}</div>)}</section>}<Contact p={p}/><footer className="brand-footer">{p.name}<span>{p.advocacy}</span></footer></div>
 }
 function Avatar({p}:{p:Profile}){return p.images?.avatar?<img src={p.images.avatar} alt={p.name+' profile picture'}/>:<>{p.name.charAt(0)}</>}
 
@@ -81,7 +84,7 @@ export default function Browser(){
   async function save(){
     if(!draft||busy)return;
     const posts=serializePosts(draftPosts);
-    const normalized={...draft,posts:posts.posts,images:{...draft.images,posts:posts.images.slice(0,MAX_POST_IMAGES)},profileLink:draft.profileLink?.trim()};
+    const normalized={...draft,style:profileFormat(draft.style),posts:posts.posts,images:{...draft.images,posts:posts.images.slice(0,MAX_POST_IMAGES)},profileLink:draft.profileLink?.trim()};
     if(!validProfile(normalized)){setError('Check the profile address and pictures. Use a web address without spaces; remove a few pictures if the profile is too large.');return}
     setSaving(true);setError('');
     try{
@@ -129,7 +132,7 @@ export default function Browser(){
               select(next.id);(e.currentTarget.parentElement?.children[profiles.indexOf(next)] as HTMLElement)?.focus();
             }
           }} onClick={()=>select(p.id)} className={'browser-tab '+(selected.id===p.id?'active':'')}>
-          <span className={'tab-icon icon-'+p.style}>{p.images?.avatar?<img src={p.images.avatar} alt=""/>:p.name.charAt(0)}</span><span>{p.name}</span>
+          <span className={'tab-icon icon-'+profileFormat(p.style)}>{p.images?.avatar?<img src={p.images.avatar} alt=""/>:p.name.charAt(0)}</span><span>{p.name}</span>
         </button>)}
         <button className="add-tab" onClick={()=>openEditor(true)} disabled={loading||unlocking} aria-label="Duplicate selected company as a new tab">+</button>
       </div>
@@ -146,7 +149,7 @@ export default function Browser(){
           <legend className="sr-only">Company details and pictures</legend>
           <div className="field-pair">
             <label>Company name<input required maxLength={150} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})}/></label>
-            <label>Personality<select value={draft.style} onChange={e=>setDraft({...draft,style:e.target.value})}>{styles.map(s=><option key={s} value={s}>{labels[s]}</option>)}</select></label>
+            <label>Format<select value={profileFormat(draft.style)} onChange={e=>setDraft({...draft,style:e.target.value})}>{styles.map(s=><option key={s} value={s}>{formatLabels[s]}</option>)}</select></label>
           </div>
           <label>Displayed profile link<input maxLength={500} value={draft.profileLink??displayProfileLink(draft)} onChange={e=>setDraft({...draft,profileLink:e.target.value})} aria-describedby="profile-link-note"/></label>
           <p className="field-note" id="profile-link-note">The address shown above this company. Leave blank to use the default. Copy profile link still shares this company’s workshop page.</p>

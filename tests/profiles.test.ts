@@ -48,3 +48,17 @@ test('post text and pictures stay paired after deletion, insertion, and reorderi
   assert.deepEqual(serialize([entries[2],{text:'New post',image:''},entries[0]]),{posts:'C\nNew post\nA',images:[png,'',png]});
   assert.deepEqual(serialize([{text:'',image:png}]),{posts:'',images:[]});
 });
+
+test('format choices support LinkedIn and poster while retaining saved legacy profiles',()=>{
+  assert.ok(profiles.styles.includes('linkedin'));
+  assert.ok(profiles.styles.includes('poster'));
+  assert.ok(profiles.styles.includes('website'));
+  assert.equal(validProfile({...initialProfiles[0],style:'linkedin'}),true);
+  assert.equal(validProfile({...initialProfiles[0],style:'poster'}),true);
+  for(const style of ['corporate','craft','community','bold'])assert.equal(validProfile({...initialProfiles[0],style}),true);
+  assert.equal(profiles.profileFormat('corporate'),'website');
+  assert.equal(profiles.profileFormat('craft'),'website');
+  assert.equal(profiles.profileFormat('community'),'website');
+  assert.equal(profiles.profileFormat('bold'),'poster');
+  assert.equal(displayProfileLink({...initialProfiles[0],style:'linkedin'}),'linkedin.example/company/kusina-ni-lina');
+});

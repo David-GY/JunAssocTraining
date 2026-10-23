@@ -1,6 +1,12 @@
 export type ProfileImages = {avatar?:string; cover?:string; posts?:string[]};
 export type Profile = {id:string; name:string; style:string; sector:string; size:string; advocacy:string; headline:string; about:string; location:string; email:string; phone:string; contact:string; services:string; posts:string; version:number; profileLink?:string; images?:ProfileImages};
-export const styles = ['social','corporate','minimal','craft','community','bold'];
+export type ProfileFormat='minimal'|'linkedin'|'social'|'website'|'poster';
+export const styles:ProfileFormat[] = ['minimal','linkedin','social','website','poster'];
+export const formatLabels:Record<ProfileFormat,string>={minimal:'Number only',linkedin:'LinkedIn',social:'Facebook',website:'Website',poster:'Poster'};
+export function profileFormat(style:string):ProfileFormat {
+  if(styles.includes(style as ProfileFormat))return style as ProfileFormat;
+  return style==='bold'?'poster':'website';
+}
 export const initialProfiles:Profile[] = [
 {id:'kusina-ni-lina',name:'Kusina ni Lina',style:'social',sector:'Food & catering',size:'8 team members',advocacy:'Local livelihoods',headline:'Lutong bahay, para sa bawat salu-salo.',about:'Home-cooked trays and packed meals from our family kitchen in Marikina. We cook with neighborhood suppliers and welcome orders for office lunches, family gatherings, and community events. Send us a message for our weekly menu.',location:'Marikina City',email:'',phone:'',contact:'Message our page for orders and inquiries.',services:'Party trays\nPacked lunches\nSmall-event catering',posts:'October 18, 2026 | Sunday orders are open! Tell us your headcount and budget so we can recommend a tray set.\nOctober 12, 2026 | Salamat to our neighborhood suppliers for another busy week. Fresh ingredients, early mornings, and lots of teamwork.\nOctober 5, 2026 | Planning an office lunch? Message us at least three days ahead. We will confirm availability before accepting your order.',version:0},
 {id:'verdant-packaging',name:'Verdant Packaging',style:'corporate',sector:'Sustainable packaging',size:'42 team members',advocacy:'Responsible production',headline:'Better packaging. Practical change.',about:'Verdant Packaging develops paper-based packaging for independent food and retail businesses. Our team works with local suppliers to help growing brands choose formats that suit their products and daily operations.',location:'Quezon City, Metro Manila',email:'partnerships@verdant.example',phone:'+63 (0)00 000 0000',contact:'Partnerships: partnerships@verdant.example\nSales: sales@verdant.example\nGeneral inquiries: hello@verdant.example\nOffice hours: Monday–Friday, 9 AM–5 PM',services:'Food-service packaging | Paper-based containers for daily operations.\nRetail packaging | Boxes and bags for independent brands.\nPackaging consultation | Product-fit discussions and material selection.',posts:'Our approach | We begin with the product, storage conditions, and how the packaging will be used.\nWorking together | We welcome focused conversations with organizations interested in responsible production and small-business support.',version:0},
@@ -19,7 +25,7 @@ export function serializePosts(entries:{text:string;image:string}[]):{posts:stri
 }
 
 export function displayProfileLink(p:Profile):string {
-  return p.profileLink || (p.style === 'social' ? 'social.example/' + p.id : p.id + '.example/');
+  return p.profileLink || (p.style === 'social' ? 'social.example/' + p.id : p.style === 'linkedin' ? 'linkedin.example/company/' + p.id : p.id + '.example/');
 }
 
 export function validImageSource(value:unknown):value is string {
@@ -39,7 +45,7 @@ export function validProfile(p:unknown):p is Profile {
   if (!p || typeof p !== 'object') return false;
   const a = p as Record<string,unknown>;
   if (typeof a.id !== 'string' || !/^[a-z0-9-]{1,70}$/.test(a.id) ||
-      typeof a.style !== 'string' || !styles.includes(a.style) ||
+      typeof a.style !== 'string' || !(styles.includes(a.style as ProfileFormat)||['corporate','craft','community','bold'].includes(a.style)) ||
       !Number.isInteger(a.version) || (a.version as number) < 0 ||
       !['name','sector','size','advocacy','headline','about','location','email','phone','contact','services','posts'].every(k => typeof a[k] === 'string' && (a[k] as string).length <= 12000) ||
       !(a.name as string).trim()) return false;

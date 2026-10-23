@@ -26,5 +26,38 @@
 .post-editor{padding:16px;border:1px solid #dce1ea;border-radius:8px;margin-bottom:18px;background:#f0f2f7}
 .post-editor>.image-field{margin-bottom:12px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.tab-icon.icon-linkedin{background:#0a66c2}.tab-icon.icon-website{background:#28654c}.tab-icon.icon-poster{background:#b45130}
+.format-logo{width:104px;height:104px;display:grid;place-items:center;background:#174e70;color:white;font:700 48px Manrope,sans-serif;flex-shrink:0;overflow:hidden;border:4px solid white}
+.format-logo img{width:100%;height:100%;object-fit:cover}
+.format-picture{position:relative;overflow:hidden;aspect-ratio:16/9;background:#bdd0d9;min-width:0}
+.format-picture>img{display:block;width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.format-illustration{position:absolute;inset:0;background:linear-gradient(120deg,#a3bac9,#d9e3e8)}
+.format-illustration span{position:absolute;border:2px solid #fff7;width:50%;height:160%;transform:rotate(35deg);top:-30%;right:4%}
+.format-illustration span:nth-child(2){right:24%;background:#ffffff18}.format-illustration span:nth-child(3){right:44%}
+.linkedin{background:#f3f2ef;color:#222;font-family:'DM Sans',Arial,sans-serif}
+.linkedin-bar{display:flex;align-items:center;gap:15px;background:white;border-bottom:1px solid #dededb;padding:12px max(6%,20px);font-size:13px;color:#626262}
+.linkedin-mark{background:#0a66c2;color:white;font:bold 28px Arial,sans-serif;border-radius:3px;padding:0 5px;line-height:33px;letter-spacing:-2px}
+.linkedin-search{background:#edf3f8;border-radius:4px;padding:10px 16px;min-width:200px}.linkedin-network{margin-left:auto}
+.linkedin-wrap{max-width:1100px;margin:auto;padding:25px 24px 50px}
+.linkedin-card{border:1px solid #dededb;border-radius:9px;background:white;padding:24px;margin-bottom:20px;overflow:hidden;scroll-margin-top:20px}
+.linkedin-card h2{font-size:20px;margin:0 0 18px}.linkedin-card p{font-size:14px;line-height:1.75;overflow-wrap:anywhere}.linkedin-card .entry h3{font-size:16px;margin:18px 0 6px}
+.linkedin-intro{padding:0}.linkedin-cover{height:185px;aspect-ratio:auto}.linkedin-intro-copy{position:relative;padding:0 28px 24px}
+.linkedin-intro-copy>.format-logo{margin-top:-52px;position:relative}.linkedin-intro h1{font-size:30px;margin:18px 0 8px;font-weight:700;overflow-wrap:anywhere}
+.linkedin-intro .linkedin-tagline{font-size:16px;color:#333;margin:0 0 8px}.linkedin-intro .linkedin-meta{font-size:13px;color:#656565;margin:0}
+.linkedin-actions{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:22px;color:#0a66c2;font-size:14px;font-weight:700}
+.linkedin-button{display:inline-block;border-radius:24px;background:#0a66c2;color:white;padding:11px 22px}.linkedin-button:hover{background:#004182}
+.linkedin-tabs{display:flex;gap:24px;flex-wrap:wrap;border-top:1px solid #eee;padding:16px 28px;color:#52665a;font-size:14px;font-weight:700}.linkedin-tabs a:hover,.linkedin-actions>a:not(.linkedin-button):hover{text-decoration:underline}
+.linkedin-columns{display:grid;grid-template-columns:minmax(0,2fr) minmax(240px,1fr);gap:24px}.linkedin-columns>div,.linkedin-columns>aside{min-width:0}
+.linkedin-card dl{margin:0}.linkedin-card dl>div{margin-top:20px}.linkedin-card dt{font-size:13px;font-weight:700;margin-bottom:5px}.linkedin-card dd{margin:0;font-size:13px;line-height:1.6;color:#666;overflow-wrap:anywhere}
+.linkedin-focus{color:#52665a}.linkedin-feed-title{font-size:20px;margin:25px 0 18px}.linkedin-post-author{display:flex;align-items:center;gap:12px;font-size:14px}.linkedin-post-author .format-logo{width:48px;height:48px;font-size:23px;border:0}.linkedin-post-author small{display:block;color:#777;font-size:12px;margin-top:5px}.linkedin-post .format-picture{margin:20px -24px -24px}
+.linkedin-post-author>div:last-child{min-width:0;overflow-wrap:anywhere}
+.poster{background:#dcd6c9;padding:45px 24px;color:#203d32}.poster-sheet{max-width:870px;margin:auto;background:#fcf6e8;box-shadow:0 8px 32px #25314a20;border-top:12px solid #c45432}
+.poster-heading{padding:34px 42px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #233c3228}.poster-heading .format-logo{width:70px;height:70px;font-size:34px;background:#203d32;border:0;border-radius:50%}.poster-heading h1{font:700 27px/1.2 Manrope,sans-serif;margin:5px 0 0;overflow-wrap:anywhere}
+.poster-eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;line-height:1.7;margin:0;color:#7d523c;font-weight:700}
+.poster-main{padding:40px 42px 0;text-align:center}.poster-main h2{font:600 clamp(35px,5vw,66px)/1.08 'Playfair Display',Georgia,serif;margin:15px auto 30px;max-width:700px;overflow-wrap:anywhere}.poster-main .format-picture{aspect-ratio:16/8;border-radius:150px 150px 0 0;background:#d5b58c}.poster-main .format-illustration{background:linear-gradient(140deg,#b35432,#dfbd82)}
+.poster-copy{padding:30px 42px;font-size:15px;line-height:1.8}.poster-services{margin-top:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 24px;border-top:1px solid #233c3228;padding-top:22px}.poster-services .entry h3{font-size:16px}
+.poster-updates{padding:0 42px 35px;display:grid;gap:25px}.poster-updates .entry h3{font-size:18px}.poster-updates .entry p{font-size:14px}.poster-updates .format-picture{margin-top:15px;max-height:320px}
+.poster-contact{background:#203d32;color:#fff5de;padding:30px 42px;overflow-wrap:anywhere}.poster-contact h2{font:500 29px 'Playfair Display',Georgia,serif;margin:0 0 18px}.poster-contact p{font-size:14px;line-height:1.8;margin:8px 0}.poster-contact .poster-team{font-size:11px;opacity:.8;margin-top:22px}
+@media(max-width:750px){.linkedin-wrap{padding:15px 12px 30px}.linkedin-columns{grid-template-columns:1fr;gap:0}.linkedin-network{display:none}.linkedin-bar{padding:12px 18px}.linkedin-intro-copy{padding:0 20px 22px}.linkedin-intro h1{font-size:25px}.linkedin-cover{height:145px}.linkedin-card{padding:20px}.linkedin-intro{padding:0}.linkedin-post .format-picture{margin:20px -20px -20px}.poster{padding:20px 12px}.poster-heading{padding:24px 22px;gap:14px}.poster-heading h1{font-size:22px}.poster-heading .format-logo{width:56px;height:56px;font-size:28px}.poster-main{padding:28px 22px 0}.poster-copy{padding:24px 22px}.poster-updates{padding:0 22px 28px}.poster-contact{padding:26px 22px}.poster-services{grid-template-columns:1fr}}
 @media(max-width:600px){.brand-nav{align-items:flex-start;flex-wrap:wrap}.social-title{flex-wrap:wrap}.social-title>div:nth-child(2){min-width:0;flex:1}.social-title h1{overflow-wrap:anywhere}.workshop-header{gap:12px}.workshop-actions{flex-wrap:wrap;justify-content:flex-end}.editor-fields{padding:20px}.image-field{padding:12px}}
 
