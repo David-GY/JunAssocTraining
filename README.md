@@ -1,4 +1,62 @@
-# vinext-starter
+# ENGAGE Company Profiles
+
+The working source repository for the ENGAGE workshop company browser is
+[David-GY/JunAssocTraining](https://github.com/David-GY/JunAssocTraining).
+Use this repository and its branches for future development and reviews.
+You can edit the source in the browser with
+[github.dev](https://github.dev/David-GY/JunAssocTraining).
+For a cloud terminal, open the repository in GitHub Codespaces using **Code → Codespaces**;
+Codespaces availability and billing depend on your GitHub account.
+
+## Recovery and hosting
+
+Recovered on October 23, 2026 from the original ENGAGE Sites source, retaining
+its original Git commit `e6f79626200824f02e3c44d4f471f61d866350a9`.
+
+- Original hosted Site: https://engage-company-profiles.davyu.chatgpt.site
+- Existing Vercel deployment: https://engage-company-browser.vercel.app
+- Recovered frontend: `app/browser.tsx`, styles: `app/globals.css`.
+- Starter records and validation: `app/profiles.ts`.
+- Recovered backend: `app/api/profiles/route.ts`, Cloudflare D1 via the `DB` binding.
+- Database schema and migration: `db/schema.ts`, `drizzle/0000_groovy_quicksilver.sql`.
+- Original Sites binding configuration: `.openai/hosting.json`.
+
+GitHub stores the application source and history. Production profile records remain
+in the running deployment's database; this recovery does not migrate that database.
+Do not replace current workshop edits with the fictional starter records.
+
+The recovered source requires Sites/Cloudflare hosting for its existing backend
+and trusted ChatGPT sign-in headers. It is not the exact source of the Vercel
+deployment: Vercel exposes `/api/editor`, which this recovered version does not
+contain. Its frontend calls same-origin `/api/profiles` and `/api/editor` routes;
+whether those server routes share storage with Sites has not been verified.
+Pushing this repository does not by itself reconnect or redeploy Vercel.
+
+Before a Vercel production update, recover or reconcile that deployment's server
+implementation, authentication, and storage configuration. Do not trust the
+Sites authentication headers directly on an unprotected Vercel endpoint.
+
+## Working from GitHub
+
+```sh
+git clone https://github.com/David-GY/JunAssocTraining.git
+cd JunAssocTraining
+git switch -c codex/your-change
+npm run install:ci
+npm run dev
+```
+
+Use Node.js 22.13 or newer. The development server defaults to port 5173.
+Keep production credentials in hosting environment settings or ignored `.env*`
+files. Use pull requests for subsequent changes and validate against the target
+runtime before deploying. The original starter's runtime instructions follow below.
+
+The pending product changes are an editable displayed profile link and picture
+uploads for all image fields. They have not been implemented by this source recovery.
+
+---
+
+## Original Vinext starter instructions
 
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
 
